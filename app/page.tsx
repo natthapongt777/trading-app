@@ -259,7 +259,7 @@ export default function Home() {
                     <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#9ca3af' }} />
                     <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-                      formatter={(v: number) => [v.toLocaleString(), 'P&L สะสม']} />
+                      formatter={(v) => [(v as number).toLocaleString(), 'P&L สะสม']} />
                     <Line type="monotone" dataKey="cum" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6', r: 3 }} />
                   </LineChart>
                 </ResponsiveContainer>
