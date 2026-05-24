@@ -400,7 +400,10 @@ export default function Home() {
               <div className="text-center py-20 text-gray-500">ยังไม่มี Setup</div>
             ) : (
               <div className="space-y-2">
-                {setups.map((s, i) => {
+                {[...setups].sort((a, b) => {
+                  const order: Record<string, number> = { 'Active': 0, 'รอ TF15 confirmation': 1, 'รอ H4 confirmation': 2 }
+                  return (order[a.stage] ?? 3) - (order[b.stage] ?? 3)
+                }).map((s, i) => {
                   const score = s.checklist.filter(Boolean).length
                   return (
                     <div key={i} className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
