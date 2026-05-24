@@ -42,6 +42,7 @@ export default function Home() {
   const [filterSymbol, setFilterSymbol] = useState('all')
   const [filterAccount, setFilterAccount] = useState('all')
   const [filterStrategy, setFilterStrategy] = useState('all')
+  const [filterMonth, setFilterMonth] = useState('all')
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -171,11 +172,13 @@ export default function Home() {
 
   // ── Dashboard calculations ──────────────────────────────────────────────────
   const tradeStrategies = [...new Set(trades.map(t => t.strategy).filter(Boolean))]
+  const tradeMonths = [...new Set(trades.map(t => t.date.slice(0, 7)))].sort().reverse()
 
   const filtered = trades.filter(t => {
     if (filterSymbol !== 'all' && t.symbol !== filterSymbol) return false
     if (filterAccount !== 'all' && t.account !== filterAccount) return false
     if (filterStrategy !== 'all' && t.strategy !== filterStrategy) return false
+    if (filterMonth !== 'all' && t.date.slice(0, 7) !== filterMonth) return false
     return true
   })
 
@@ -267,6 +270,11 @@ export default function Home() {
                 className="bg-gray-800 text-white text-xs px-3 py-2 rounded-lg border border-gray-700 focus:outline-none">
                 <option value="all">All Strategies</option>
                 {tradeStrategies.map(s => <option key={s}>{s}</option>)}
+              </select>
+              <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
+                className="bg-gray-800 text-white text-xs px-3 py-2 rounded-lg border border-gray-700 focus:outline-none">
+                <option value="all">All Months</option>
+                {tradeMonths.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
 
