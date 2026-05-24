@@ -1,6 +1,6 @@
 export const PRODUCTS = ['XAUUSD', 'XAGUSD', 'BTCUSD', 'EURUSD', 'XTIUSD']
 export const ACCOUNTS = ['Eightcap', '5%er']
-export const STAGES = ['กำลังดู', 'รอสัญญาณ', 'พร้อม Entry', 'Active']
+export const STAGES = ['รอ H4 confirmation', 'รอ TF15 confirmation', 'Active']
 export const CHECKLIST_ITEMS = [
   'H4 Trend เหมือน Day (Buy or Sell)',
   'H4 Overbought / Oversold',
