@@ -11,6 +11,7 @@ export interface Trade {
   feeling: string
   strategy: string
   notes: string
+  plan: 'ตามแผน' | 'ไม่ตามแผน' | ''
 }
 
 export interface Setup {

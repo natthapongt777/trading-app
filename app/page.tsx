@@ -13,7 +13,7 @@ type Tab = 'dashboard' | 'trades' | 'setups'
 const defaultForm = {
   date: '', symbol: 'XAUUSD', direction: 'Buy' as 'Buy' | 'Sell',
   account: 'Eightcap', entry: '', exit: '', size: '', pnl: '',
-  feeling: '', strategy: '', notes: '',
+  feeling: '', strategy: '', notes: '', plan: 'ตามแผน' as 'ตามแผน' | 'ไม่ตามแผน',
 }
 
 export default function Home() {
@@ -72,7 +72,7 @@ export default function Home() {
           exit: parseFloat(tradeForm.exit) || 0,
           size: parseFloat(tradeForm.size) || 0,
           pnl: parseFloat(tradeForm.pnl) || 0,
-          feeling: tradeForm.feeling, strategy: tradeForm.strategy, notes: tradeForm.notes,
+          feeling: tradeForm.feeling, strategy: tradeForm.strategy, notes: tradeForm.notes, plan: tradeForm.plan,
         }),
       })
       if (!res.ok) throw new Error()
@@ -174,6 +174,12 @@ export default function Home() {
   const accMap: Record<string, number> = {}
   filtered.forEach(t => { accMap[t.account] = (accMap[t.account] ?? 0) + t.pnl })
   const accData = Object.entries(accMap).map(([account, pnl]) => ({ account, pnl: Math.round(pnl) }))
+
+  const planGroups = ['ตามแผน', 'ไม่ตามแผน'].map(p => {
+    const group = filtered.filter(t => t.plan === p)
+    const w = group.filter(t => t.pnl > 0).length
+    return { plan: p, pnl: Math.round(group.reduce((s, t) => s + t.pnl, 0)), winRate: group.length > 0 ? Math.round(w / group.length * 100) : 0, count: group.length }
+  })
 
   const tradeSymbols = [...new Set(trades.map(t => t.symbol))]
 
@@ -309,6 +315,23 @@ export default function Home() {
               )}
             </div>
 
+            {/* Plan vs Not Plan */}
+            {filtered.some(t => t.plan) && (
+              <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
+                <h3 className="text-sm font-semibold mb-3">📋 ตามแผน vs ไม่ตามแผน</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {planGroups.map(g => (
+                    <div key={g.plan} className={`rounded-xl p-3 border ${g.plan === 'ตามแผน' ? 'bg-green-900/20 border-green-800/40' : 'bg-red-900/20 border-red-800/40'}`}>
+                      <p className="text-xs font-bold mb-2">{g.plan === 'ตามแผน' ? '✅ ตามแผน' : '❌ ไม่ตามแผน'}</p>
+                      <p className={`text-lg font-bold ${g.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>{g.pnl >= 0 ? '+' : ''}{g.pnl.toLocaleString()}</p>
+                      <p className="text-xs text-gray-400 mt-1">Win Rate {g.winRate}%</p>
+                      <p className="text-xs text-gray-500">{g.count} trades</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* P&L by Feeling */}
             {feelingData.length > 0 && (
               <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
@@ -357,6 +380,11 @@ export default function Home() {
                           {t.direction}
                         </span>
                         <span className="text-xs text-gray-400 bg-gray-800 px-2 py-0.5 rounded-full">{t.account}</span>
+                        {t.plan && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${t.plan === 'ตามแผน' ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'}`}>
+                            {t.plan === 'ตามแผน' ? '✅' : '❌'} {t.plan}
+                          </span>
+                        )}
                       </div>
                       <span className={`font-bold text-sm ${t.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                         {t.pnl >= 0 ? '+' : ''}{t.pnl.toLocaleString()}
@@ -529,6 +557,20 @@ export default function Home() {
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
                 </div>
               ))}
+
+              <div>
+                <label className="text-xs text-gray-400 mb-2 block">ทำตามแผนไหม?</label>
+                <div className="flex gap-2">
+                  {(['ตามแผน', 'ไม่ตามแผน'] as const).map(p => (
+                    <button key={p} onClick={() => setTradeForm(f => ({ ...f, plan: p }))}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${
+                        tradeForm.plan === p
+                          ? p === 'ตามแผน' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                          : 'bg-gray-800 text-gray-400 border border-gray-700'
+                      }`}>{p === 'ตามแผน' ? '✅ ตามแผน' : '❌ ไม่ตามแผน'}</button>
+                  ))}
+                </div>
+              </div>
 
               <div className="flex gap-2 pt-1 pb-2">
                 <button onClick={() => setShowTradeForm(false)}
