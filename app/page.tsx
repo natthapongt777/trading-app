@@ -297,7 +297,7 @@ export default function Home() {
                       <XAxis dataKey="account" tick={{ fontSize: 11, fill: '#9ca3af' }} />
                       <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-                        formatter={(v: number) => [v.toLocaleString(), 'P&L']} />
+                        formatter={(v) => [(v as number).toLocaleString(), 'P&L']} />
                       <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
                         {accData.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? '#22c55e' : '#ef4444'} />)}
                       </Bar>
@@ -318,7 +318,7 @@ export default function Home() {
                     <XAxis dataKey="feeling" tick={{ fontSize: 11, fill: '#9ca3af' }} />
                     <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-                      formatter={(v: number) => [v.toLocaleString(), 'P&L รวม']} />
+                      formatter={(v) => [(v as number).toLocaleString(), 'P&L รวม']} />
                     <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
                       {feelingData.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? '#3b82f6' : '#ef4444'} />)}
                     </Bar>
