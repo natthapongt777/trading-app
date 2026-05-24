@@ -33,6 +33,7 @@ export default function Home() {
   const [showAddSetup, setShowAddSetup] = useState(false)
   const [savingSetup, setSavingSetup] = useState(false)
   const [newSymbol, setNewSymbol] = useState('XAUUSD')
+  const [newDirection, setNewDirection] = useState<'Buy' | 'Sell' | ''>('')
   const [customSymbol, setCustomSymbol] = useState('')
 
   const [filterSymbol, setFilterSymbol] = useState('all')
@@ -135,11 +136,12 @@ export default function Home() {
       const res = await fetch('/api/setups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol, stage: 'กำลังดู', checklist: Array(8).fill(false), notes: '', lastUpdated: '' }),
+        body: JSON.stringify({ symbol, stage: 'กำลังดู', direction: newDirection, checklist: Array(8).fill(false), notes: '', lastUpdated: '' }),
       })
       if (!res.ok) throw new Error()
       setShowAddSetup(false)
       setNewSymbol('XAUUSD')
+      setNewDirection('')
       setCustomSymbol('')
       showToast(`เพิ่ม ${symbol} เรียบร้อย`)
       fetchData()
@@ -405,6 +407,11 @@ export default function Home() {
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="font-mono font-bold">{s.symbol}</span>
+                          {s.direction && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${s.direction === 'Buy' ? 'bg-green-900/60 text-green-400 border border-green-700' : 'bg-red-900/60 text-red-400 border border-red-700'}`}>
+                              {s.direction === 'Buy' ? '▲ Buy' : '▼ Sell'}
+                            </span>
+                          )}
                           <span className={`text-xs px-2 py-0.5 rounded-full ${stageColor(s.stage)}`}>{s.stage}</span>
                         </div>
                         <span className={`text-lg font-bold ${score >= 6 ? 'text-green-400' : score >= 4 ? 'text-yellow-400' : 'text-gray-400'}`}>
@@ -546,6 +553,19 @@ export default function Home() {
             </div>
             <div className="px-5 py-4 space-y-4">
               <div>
+                <label className="text-xs text-gray-400 mb-2 block">Focus Direction</label>
+                <div className="flex gap-2">
+                  {(['Buy', 'Sell', ''] as const).map(d => (
+                    <button key={d} onClick={() => setEditSetup(p => p ? { ...p, direction: d } : null)}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition ${
+                        editSetup.direction === d
+                          ? d === 'Buy' ? 'bg-green-600 text-white' : d === 'Sell' ? 'bg-red-600 text-white' : 'bg-gray-600 text-white'
+                          : 'bg-gray-800 text-gray-400 border border-gray-700'
+                      }`}>{d === 'Buy' ? '▲ Buy' : d === 'Sell' ? '▼ Sell' : 'ยังไม่กำหนด'}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
                 <label className="text-xs text-gray-400 mb-2 block">Stage</label>
                 <div className="flex flex-wrap gap-2">
                   {STAGES.map(s => (
@@ -677,6 +697,19 @@ export default function Home() {
                   value={customSymbol} onChange={e => setCustomSymbol(e.target.value)}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
               )}
+              <div>
+                <label className="text-xs text-gray-400 mb-2 block">Focus Direction</label>
+                <div className="flex gap-2">
+                  {(['Buy', 'Sell', ''] as const).map(d => (
+                    <button key={d} onClick={() => setNewDirection(d)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition ${
+                        newDirection === d
+                          ? d === 'Buy' ? 'bg-green-600 text-white' : d === 'Sell' ? 'bg-red-600 text-white' : 'bg-gray-600 text-white'
+                          : 'bg-gray-800 text-gray-400 border border-gray-700'
+                      }`}>{d === 'Buy' ? '▲ Buy' : d === 'Sell' ? '▼ Sell' : 'ยังไม่กำหนด'}</button>
+                  ))}
+                </div>
+              </div>
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setShowAddSetup(false)}
                   className="flex-1 border border-gray-700 text-gray-400 py-2.5 rounded-xl text-sm">ยกเลิก</button>

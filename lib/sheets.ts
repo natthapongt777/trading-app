@@ -18,11 +18,11 @@ let mockTrades: Trade[] = [
 ]
 
 let mockSetups: Setup[] = [
-  { rowIndex: 2, symbol: 'XAUUSD', stage: 'พร้อม Entry', checklist: [true, true, true, true, true, true, true, false], notes: 'รอ H1 confirm',   lastUpdated: '2025-05-23' },
-  { rowIndex: 3, symbol: 'BTCUSD', stage: 'รอสัญญาณ',   checklist: [true, true, true, false, false, false, false, false], notes: 'Need pullback', lastUpdated: '2025-05-22' },
-  { rowIndex: 4, symbol: 'EURUSD', stage: 'กำลังดู',    checklist: [true, false, false, false, false, false, false, false], notes: '',            lastUpdated: '2025-05-21' },
-  { rowIndex: 5, symbol: 'XAGUSD', stage: 'รอสัญญาณ',   checklist: [true, true, true, true, false, false, false, false], notes: 'Near key level', lastUpdated: '2025-05-23' },
-  { rowIndex: 6, symbol: 'XTIUSD', stage: 'กำลังดู',    checklist: [true, true, false, false, false, false, false, false], notes: '',            lastUpdated: '2025-05-20' },
+  { rowIndex: 2, symbol: 'XAUUSD', stage: 'พร้อม Entry', direction: 'Buy',  checklist: [true, true, true, true, true, true, true, false], notes: 'รอ H1 confirm',   lastUpdated: '2025-05-23' },
+  { rowIndex: 3, symbol: 'BTCUSD', stage: 'รอสัญญาณ',   direction: 'Sell', checklist: [true, true, true, false, false, false, false, false], notes: 'Need pullback', lastUpdated: '2025-05-22' },
+  { rowIndex: 4, symbol: 'EURUSD', stage: 'กำลังดู',    direction: '',     checklist: [true, false, false, false, false, false, false, false], notes: '',            lastUpdated: '2025-05-21' },
+  { rowIndex: 5, symbol: 'XAGUSD', stage: 'รอสัญญาณ',   direction: 'Buy',  checklist: [true, true, true, true, false, false, false, false], notes: 'Near key level', lastUpdated: '2025-05-23' },
+  { rowIndex: 6, symbol: 'XTIUSD', stage: 'กำลังดู',    direction: '',     checklist: [true, true, false, false, false, false, false, false], notes: '',            lastUpdated: '2025-05-20' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ export async function getSetups(): Promise<Setup[]> {
   const sheets = await getSheetClient()
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: 'Setups!A2:L',
+    range: 'Setups!A2:M',
   })
   const rows = res.data.values ?? []
   return rows.map((row, idx) => ({
@@ -122,6 +122,7 @@ export async function getSetups(): Promise<Setup[]> {
     checklist:   [row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]].map(v => v === 'TRUE'),
     notes:       row[10] ?? '',
     lastUpdated: row[11] ?? '',
+    direction:   (row[12] as 'Buy' | 'Sell' | '') ?? '',
   }))
 }
 
@@ -155,13 +156,13 @@ export async function addSetup(setup: Omit<Setup, 'rowIndex'>): Promise<void> {
   const sheets = await getSheetClient()
   await sheets.spreadsheets.values.append({
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: 'Setups!A:L',
+    range: 'Setups!A:M',
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[
         setup.symbol, setup.stage,
         ...setup.checklist.map(c => c ? 'TRUE' : 'FALSE'),
-        setup.notes, now,
+        setup.notes, now, setup.direction ?? '',
       ]],
     },
   })
@@ -179,13 +180,13 @@ export async function updateSetup(setup: Setup): Promise<void> {
   const sheets = await getSheetClient()
   await sheets.spreadsheets.values.update({
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: `Setups!A${setup.rowIndex}:L${setup.rowIndex}`,
+    range: `Setups!A${setup.rowIndex}:M${setup.rowIndex}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[
         setup.symbol, setup.stage,
         ...setup.checklist.map(c => c ? 'TRUE' : 'FALSE'),
-        setup.notes, now,
+        setup.notes, now, setup.direction ?? '',
       ]],
     },
   })

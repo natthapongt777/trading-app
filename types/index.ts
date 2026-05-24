@@ -17,6 +17,7 @@ export interface Setup {
   rowIndex: number
   symbol: string
   stage: string
+  direction: 'Buy' | 'Sell' | ''
   checklist: boolean[]
   notes: string
   lastUpdated: string
