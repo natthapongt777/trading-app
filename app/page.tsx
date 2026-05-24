@@ -36,8 +36,12 @@ export default function Home() {
   const [newDirection, setNewDirection] = useState<'Buy' | 'Sell' | ''>('')
   const [customSymbol, setCustomSymbol] = useState('')
 
+  const [editTrade, setEditTrade] = useState<Trade | null>(null)
+  const [savingEditTrade, setSavingEditTrade] = useState(false)
+
   const [filterSymbol, setFilterSymbol] = useState('all')
   const [filterAccount, setFilterAccount] = useState('all')
+  const [filterStrategy, setFilterStrategy] = useState('all')
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -82,6 +86,22 @@ export default function Home() {
       fetchData()
     } catch { showToast('บันทึกไม่สำเร็จ') }
     setSavingTrade(false)
+  }
+
+  const handleSaveTrade = async (trade: Trade) => {
+    setSavingEditTrade(true)
+    try {
+      const res = await fetch('/api/trades', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(trade),
+      })
+      if (!res.ok) throw new Error()
+      setEditTrade(null)
+      showToast('แก้ไขเทรดเรียบร้อย')
+      fetchData()
+    } catch { showToast('แก้ไขไม่สำเร็จ') }
+    setSavingEditTrade(false)
   }
 
   const handleDeleteTrade = async (trade: Trade) => {
@@ -150,9 +170,12 @@ export default function Home() {
   }
 
   // ── Dashboard calculations ──────────────────────────────────────────────────
+  const tradeStrategies = [...new Set(trades.map(t => t.strategy).filter(Boolean))]
+
   const filtered = trades.filter(t => {
     if (filterSymbol !== 'all' && t.symbol !== filterSymbol) return false
     if (filterAccount !== 'all' && t.account !== filterAccount) return false
+    if (filterStrategy !== 'all' && t.strategy !== filterStrategy) return false
     return true
   })
 
@@ -239,6 +262,11 @@ export default function Home() {
                 className="bg-gray-800 text-white text-xs px-3 py-2 rounded-lg border border-gray-700 focus:outline-none">
                 <option value="all">All Accounts</option>
                 {ACCOUNTS.map(a => <option key={a}>{a}</option>)}
+              </select>
+              <select value={filterStrategy} onChange={e => setFilterStrategy(e.target.value)}
+                className="bg-gray-800 text-white text-xs px-3 py-2 rounded-lg border border-gray-700 focus:outline-none">
+                <option value="all">All Strategies</option>
+                {tradeStrategies.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
 
@@ -400,10 +428,12 @@ export default function Home() {
                     {(t.strategy || t.notes) && (
                       <p className="text-xs text-gray-500 mt-1">{[t.strategy, t.notes].filter(Boolean).join(' · ')}</p>
                     )}
-                    <button onClick={() => setDeleteConfirm(t)}
-                      className="mt-2 text-xs text-gray-600 hover:text-red-400 transition">
-                      🗑 ลบ
-                    </button>
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={() => setEditTrade({ ...t })}
+                        className="text-xs text-gray-500 hover:text-blue-400 transition">✏️ แก้ไข</button>
+                      <button onClick={() => setDeleteConfirm(t)}
+                        className="text-xs text-gray-600 hover:text-red-400 transition">🗑 ลบ</button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -761,6 +791,104 @@ export default function Home() {
                 <button onClick={handleAddSetup} disabled={savingSetup}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white py-2.5 rounded-xl text-sm font-semibold">
                   {savingSetup ? '...' : '+ เพิ่ม'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── Edit Trade Modal ──────────────────────────────────────────────── */}
+      {editTrade && (
+        <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+          <div className="bg-gray-900 w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-y-auto max-h-[92vh]">
+            <div className="bg-gradient-to-r from-gray-800 to-blue-900 px-5 py-4 flex justify-between items-center">
+              <h2 className="font-bold">✏️ แก้ไขเทรด</h2>
+              <button onClick={() => setEditTrade(null)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">วันที่</label>
+                <input type="date" value={editTrade.date} onChange={e => setEditTrade(t => t ? { ...t, date: e.target.value } : null)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">Symbol</label>
+                  <select value={editTrade.symbol} onChange={e => setEditTrade(t => t ? { ...t, symbol: e.target.value } : null)}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                    {PRODUCTS.map(p => <option key={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">Direction</label>
+                  <div className="flex gap-1 h-[38px]">
+                    {(['Buy', 'Sell'] as const).map(d => (
+                      <button key={d} onClick={() => setEditTrade(t => t ? { ...t, direction: d } : null)}
+                        className={`flex-1 rounded-lg text-sm font-medium transition ${
+                          editTrade.direction === d
+                            ? d === 'Buy' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                            : 'bg-gray-800 text-gray-400 border border-gray-700'
+                        }`}>{d}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Account</label>
+                <div className="flex gap-2">
+                  {ACCOUNTS.map(a => (
+                    <button key={a} onClick={() => setEditTrade(t => t ? { ...t, account: a } : null)}
+                      className={`flex-1 py-2 rounded-lg text-sm transition ${
+                        editTrade.account === a ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 border border-gray-700'
+                      }`}>{a}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {(['entry', 'exit', 'size'] as const).map(k => (
+                  <div key={k}>
+                    <label className="text-xs text-gray-400 mb-1 block capitalize">{k === 'size' ? 'Lot' : k}</label>
+                    <input type="number" step="any" value={editTrade[k]}
+                      onChange={e => setEditTrade(t => t ? { ...t, [k]: parseFloat(e.target.value) || 0 } : null)}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+                  </div>
+                ))}
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">P&L</label>
+                <input type="number" step="any" value={editTrade.pnl}
+                  onChange={e => setEditTrade(t => t ? { ...t, pnl: parseFloat(e.target.value) || 0 } : null)}
+                  className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-sm font-bold focus:outline-none ${
+                    editTrade.pnl > 0 ? 'text-green-400 border-green-700' : editTrade.pnl < 0 ? 'text-red-400 border-red-700' : 'text-white border-gray-700'
+                  }`} />
+              </div>
+              {(['feeling', 'strategy', 'notes'] as const).map(k => (
+                <div key={k}>
+                  <label className="text-xs text-gray-400 mb-1 block capitalize">{k === 'feeling' ? 'Feeling' : k === 'strategy' ? 'Strategy' : 'Notes'}</label>
+                  <input type="text" value={editTrade[k]}
+                    onChange={e => setEditTrade(t => t ? { ...t, [k]: e.target.value } : null)}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+                </div>
+              ))}
+              <div>
+                <label className="text-xs text-gray-400 mb-2 block">ทำตามแผนไหม?</label>
+                <div className="flex gap-2">
+                  {(['ตามแผน', 'ไม่ตามแผน'] as const).map(p => (
+                    <button key={p} onClick={() => setEditTrade(t => t ? { ...t, plan: p } : null)}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${
+                        editTrade.plan === p
+                          ? p === 'ตามแผน' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                          : 'bg-gray-800 text-gray-400 border border-gray-700'
+                      }`}>{p === 'ตามแผน' ? '✅ ตามแผน' : '❌ ไม่ตามแผน'}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1 pb-2">
+                <button onClick={() => setEditTrade(null)}
+                  className="flex-1 border border-gray-700 text-gray-400 py-2.5 rounded-xl text-sm">ยกเลิก</button>
+                <button onClick={() => handleSaveTrade(editTrade)} disabled={savingEditTrade}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white py-2.5 rounded-xl text-sm font-semibold">
+                  {savingEditTrade ? 'กำลังบันทึก...' : '💾 บันทึก'}
                 </button>
               </div>
             </div>

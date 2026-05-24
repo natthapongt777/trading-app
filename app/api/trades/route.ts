@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getTrades, addTrade, deleteTrade } from '@/lib/sheets'
+import { getTrades, addTrade, updateTrade, deleteTrade } from '@/lib/sheets'
 
 export async function GET() {
   try {
@@ -12,6 +12,15 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     await addTrade(await req.json())
+    return NextResponse.json({ ok: true })
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    await updateTrade(await req.json())
     return NextResponse.json({ ok: true })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })

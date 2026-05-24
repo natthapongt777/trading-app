@@ -85,6 +85,28 @@ export async function deleteTrade(rowIndex: number): Promise<void> {
   })
 }
 
+export async function updateTrade(trade: Trade): Promise<void> {
+  if (!isConfigured()) {
+    const idx = mockTrades.findIndex(t => t.rowIndex === trade.rowIndex)
+    if (idx !== -1) mockTrades[idx] = trade
+    return
+  }
+
+  const sheets = await getSheetClient()
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID,
+    range: `Trades!A${trade.rowIndex}:L${trade.rowIndex}`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [[
+        trade.date, trade.symbol, trade.direction, trade.account,
+        trade.entry, trade.exit, trade.size, trade.pnl,
+        trade.feeling, trade.strategy, trade.notes, trade.plan ?? '',
+      ]],
+    },
+  })
+}
+
 export async function addTrade(trade: Omit<Trade, 'rowIndex'>): Promise<void> {
   if (!isConfigured()) {
     mockTrades.push({ ...trade, rowIndex: mockTrades.length + 2 })
