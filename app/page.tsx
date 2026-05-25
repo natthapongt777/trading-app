@@ -44,6 +44,9 @@ export default function Home() {
   const [filterStrategy, setFilterStrategy] = useState('all')
   const [filterMonth, setFilterMonth] = useState('all')
 
+  const [tradeFilterAccount, setTradeFilterAccount] = useState('all')
+  const [tradeSortOrder, setTradeSortOrder] = useState<'desc' | 'asc'>('desc')
+
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(''), 3000)
@@ -401,13 +404,28 @@ export default function Home() {
               </button>
             </div>
 
+            <div className="flex gap-2 flex-wrap">
+              <select value={tradeFilterAccount} onChange={e => setTradeFilterAccount(e.target.value)}
+                className="bg-gray-800 text-white text-xs px-3 py-2 rounded-lg border border-gray-700 focus:outline-none">
+                <option value="all">All Accounts</option>
+                {ACCOUNTS.map(a => <option key={a}>{a}</option>)}
+              </select>
+              <button onClick={() => setTradeSortOrder(o => o === 'desc' ? 'asc' : 'desc')}
+                className="bg-gray-800 text-white text-xs px-3 py-2 rounded-lg border border-gray-700 flex items-center gap-1">
+                {tradeSortOrder === 'desc' ? '↓ ใหม่สุดก่อน' : '↑ เก่าสุดก่อน'}
+              </button>
+            </div>
+
             {loading ? (
               <div className="text-center py-20 text-gray-500">กำลังโหลด...</div>
             ) : trades.length === 0 ? (
               <div className="text-center py-20 text-gray-500">ยังไม่มีรายการเทรด</div>
             ) : (
               <div className="space-y-2">
-                {trades.map((t, i) => (
+                {[...trades]
+                  .filter(t => tradeFilterAccount === 'all' || t.account === tradeFilterAccount)
+                  .sort((a, b) => tradeSortOrder === 'desc' ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date))
+                  .map((t, i) => (
                   <div key={i} className={`rounded-xl p-3 border ${t.pnl >= 0 ? 'bg-green-900/20 border-green-800/40' : 'bg-red-900/20 border-red-800/40'}`}>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -449,7 +467,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* ── SETUPS ───────────────────────────────────────────────────────── */}
+        {/* ── SETUPS ──────────────────────────────────────────────────────── */}
         {tab === 'setups' && (
           <div className="space-y-3">
             <div className="flex justify-between items-center">
