@@ -486,7 +486,9 @@ export default function Home() {
               <div className="space-y-2">
                 {[...setups].sort((a, b) => {
                   const order: Record<string, number> = { 'Active': 0, 'รอ TF15 confirmation': 1, 'รอ H4 confirmation': 2 }
-                  return (order[a.stage] ?? 3) - (order[b.stage] ?? 3)
+                  const stageDiff = (order[a.stage] ?? 3) - (order[b.stage] ?? 3)
+                  if (stageDiff !== 0) return stageDiff
+                  return b.checklist.filter(Boolean).length - a.checklist.filter(Boolean).length
                 }).map((s, i) => {
                   const score = s.checklist.filter(Boolean).length
                   return (
