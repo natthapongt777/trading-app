@@ -46,7 +46,7 @@ export async function getTrades(): Promise<Trade[]> {
   const sheets = await getSheetClient()
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: 'Trades!A2:K',
+    range: 'Trades!A2:L',
   })
   const rows = res.data.values ?? []
   return rows.map((row, idx) => ({
