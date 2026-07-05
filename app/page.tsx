@@ -6,7 +6,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { Trade, Setup } from '@/types'
-import { PRODUCTS, ACCOUNTS, STAGES, STRATEGIES, CHECKLIST_ITEMS } from '@/lib/constants'
+import { PRODUCTS, ACCOUNTS, STAGES, STRATEGIES, CHECKLIST_ITEMS, LOT_CALC } from '@/lib/constants'
 
 type Tab = 'dashboard' | 'trades' | 'setups'
 
@@ -28,6 +28,8 @@ export default function Home() {
   const [savingTrade, setSavingTrade] = useState(false)
 
   const [editSetup, setEditSetup] = useState<Setup | null>(null)
+  const [calcDiff, setCalcDiff] = useState('')
+  const [calcRisk, setCalcRisk] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState<Trade | null>(null)
   const [deleteSetupConfirm, setDeleteSetupConfirm] = useState<Setup | null>(null)
   const [showAddSetup, setShowAddSetup] = useState(false)
@@ -533,7 +535,7 @@ export default function Home() {
                           style={{ width: `${score / 8 * 100}%` }} />
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => setEditSetup({ ...s, checklist: [...s.checklist] })}
+                        <button onClick={() => { setEditSetup({ ...s, checklist: [...s.checklist] }); setCalcDiff(''); setCalcRisk('') }}
                           className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs py-2 rounded-lg transition">
                           ✏️ แก้ไข Checklist
                         </button>
@@ -752,6 +754,40 @@ export default function Home() {
                     <span className={`text-sm ${editSetup.checklist[idx] ? 'text-green-300' : 'text-gray-400'}`}>{item}</span>
                   </button>
                 ))}
+              </div>
+
+              {/* Lot Size Calculator */}
+              <div className="bg-gray-900/80 border border-blue-900/60 rounded-xl p-3 space-y-2">
+                <p className="text-xs font-semibold text-blue-300">🧮 Lot Size Calculator — {editSetup.symbol}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Gap / Diff (ราคา Entry - SL)</label>
+                    <input type="text" inputMode="decimal" placeholder={editSetup.symbol === 'XAUUSD' ? 'เช่น 100' : editSetup.symbol === 'XAGUSD' ? 'เช่น 1' : editSetup.symbol === 'BTCUSD' ? 'เช่น 1000' : 'เช่น 0.0050'}
+                      value={calcDiff} onChange={e => setCalcDiff(e.target.value)}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Risk (USD)</label>
+                    <input type="text" inputMode="decimal" placeholder="เช่น 100"
+                      value={calcRisk} onChange={e => setCalcRisk(e.target.value)}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+                  </div>
+                </div>
+                {LOT_CALC[editSetup.symbol] && parseFloat(calcDiff) > 0 && parseFloat(calcRisk) > 0 ? (
+                  <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg px-4 py-2 flex items-center justify-between">
+                    <span className="text-xs text-gray-400">Lot ที่ควรใช้</span>
+                    <div className="text-right">
+                      <span className="text-2xl font-bold text-blue-300">
+                        {(parseFloat(calcRisk) / (parseFloat(calcDiff) * LOT_CALC[editSetup.symbol])).toFixed(2)}
+                      </span>
+                      <span className="text-sm text-gray-400 ml-1">lot</span>
+                    </div>
+                  </div>
+                ) : !LOT_CALC[editSetup.symbol] ? (
+                  <p className="text-xs text-gray-500">Symbol นี้ยังไม่มีข้อมูล multiplier</p>
+                ) : (
+                  <p className="text-xs text-gray-600">ใส่ Diff และ Risk เพื่อคำนวณ lot</p>
+                )}
               </div>
 
               <div>
