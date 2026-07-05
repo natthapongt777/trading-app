@@ -37,6 +37,7 @@ export default function Home() {
   const [customSymbol, setCustomSymbol] = useState('')
 
   const [editTrade, setEditTrade] = useState<Trade | null>(null)
+  const [editRrStr, setEditRrStr] = useState('')
   const [savingEditTrade, setSavingEditTrade] = useState(false)
 
   const [filterSymbol, setFilterSymbol] = useState('all')
@@ -437,7 +438,7 @@ export default function Home() {
                       <p className="text-xs text-yellow-500/80 mt-1">💡 {t.learningPoint}</p>
                     )}
                     <div className="flex gap-2 mt-2">
-                      <button onClick={() => setEditTrade({ ...t })}
+                      <button onClick={() => { setEditTrade({ ...t }); setEditRrStr(t.rr === 0 ? '' : String(t.rr)) }}
                         className="text-xs text-gray-500 hover:text-blue-400 transition">✏️ แก้ไข</button>
                       <button onClick={() => setDeleteConfirm(t)}
                         className="text-xs text-gray-600 hover:text-red-400 transition">🗑 ลบ</button>
@@ -586,7 +587,7 @@ export default function Home() {
 
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">RR (กี่ R — ใส่ + ถ้า win, - ถ้า loss)</label>
-                <input type="number" step="0.1" placeholder="เช่น 2.5 หรือ -1"
+                <input type="text" inputMode="decimal" placeholder="เช่น 2.5 หรือ -1"
                   value={tradeForm.rr}
                   onChange={e => setTradeForm(f => ({ ...f, rr: e.target.value }))}
                   className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-sm focus:outline-none ${
@@ -896,12 +897,16 @@ export default function Home() {
               </div>
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">RR (กี่ R — ใส่ + ถ้า win, - ถ้า loss)</label>
-                <input type="number" step="0.1"
-                  value={editTrade.rr}
-                  onChange={e => setEditTrade(t => t ? { ...t, rr: parseFloat(e.target.value) || 0 } : null)}
+                <input type="text" inputMode="decimal" placeholder="เช่น 2.5 หรือ -1"
+                  value={editRrStr}
+                  onChange={e => {
+                    setEditRrStr(e.target.value)
+                    const parsed = parseFloat(e.target.value)
+                    if (!isNaN(parsed)) setEditTrade(t => t ? { ...t, rr: parsed } : null)
+                  }}
                   className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-sm focus:outline-none ${
-                    editTrade.rr > 0 ? 'text-green-400 border-green-700' :
-                    editTrade.rr < 0 ? 'text-red-400 border-red-700' :
+                    parseFloat(editRrStr) > 0 ? 'text-green-400 border-green-700' :
+                    parseFloat(editRrStr) < 0 ? 'text-red-400 border-red-700' :
                     'text-white border-gray-700'
                   }`} />
               </div>
