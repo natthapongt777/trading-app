@@ -737,7 +737,7 @@ export default function Home() {
 
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">RR (กี่ R — ใส่ + ถ้า win, - ถ้า loss)</label>
-                <input type="text" inputMode="decimal" placeholder="เช่น 2.5 หรือ -1"
+                <input type="text" inputMode="text" placeholder="เช่น 2.5 หรือ -1"
                   value={tradeForm.rr}
                   onChange={e => setTradeForm(f => ({ ...f, rr: e.target.value }))}
                   className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-sm focus:outline-none ${
@@ -1081,7 +1081,7 @@ export default function Home() {
               </div>
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">RR (กี่ R — ใส่ + ถ้า win, - ถ้า loss)</label>
-                <input type="text" inputMode="decimal" placeholder="เช่น 2.5 หรือ -1"
+                <input type="text" inputMode="text" placeholder="เช่น 2.5 หรือ -1"
                   value={editRrStr}
                   onChange={e => {
                     setEditRrStr(e.target.value)
