@@ -616,65 +616,38 @@ export default function Home() {
               ))}
             </div>
 
-            <p className="text-xs text-gray-500">{reviewFiltered.length} trade{reviewFiltered.length !== 1 ? 's' : ''}</p>
-
-            {loading ? (
-              <div className="text-center py-20 text-gray-500">กำลังโหลด...</div>
-            ) : reviewFiltered.length === 0 ? (
-              <div className="text-center py-20 text-gray-500">ไม่มี trade ที่ตรงกับ filter</div>
-            ) : (
-              <div className="space-y-3">
-                {reviewFiltered.map((t, i) => (
-                  <div key={i} className={`rounded-xl p-4 border space-y-2 ${t.pnl >= 0 ? 'bg-green-900/10 border-green-800/30' : 'bg-red-900/10 border-red-800/30'}`}>
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono font-bold text-sm">{t.symbol}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${t.direction === 'Buy' ? 'bg-green-700 text-green-100' : 'bg-red-700 text-red-100'}`}>{t.direction}</span>
-                        <span className="text-xs text-gray-400">{t.date}</span>
-                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">{t.account}</span>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span className={`font-bold text-sm ${t.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {t.pnl >= 0 ? '+' : ''}{t.pnl.toLocaleString()}
-                        </span>
-                        {t.rr !== 0 && (
-                          <span className={`ml-2 text-xs font-medium ${t.rr > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {t.rr > 0 ? '+' : ''}{t.rr}R
-                          </span>
-                        )}
+            {(() => {
+              const withLP = reviewFiltered.filter(t => t.learningPoint)
+              return loading ? (
+                <div className="text-center py-20 text-gray-500">กำลังโหลด...</div>
+              ) : withLP.length === 0 ? (
+                <div className="text-center py-20 text-gray-500">ไม่มี learning point ที่ตรงกับ filter</div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500">💡 {withLP.length} learning point</p>
+                  {withLP.map((t, i) => (
+                    <div key={i} className="bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 space-y-1.5">
+                      <p className="text-sm text-yellow-100">{t.learningPoint}</p>
+                      <div className="flex flex-wrap gap-1">
+                        <span className="text-xs text-gray-500 font-mono">{t.symbol}</span>
+                        <span className="text-gray-600">·</span>
+                        <span className={`text-xs font-medium ${t.pnl > 0 ? 'text-green-400' : 'text-red-400'}`}>{t.pnl > 0 ? 'Win' : 'Loss'}</span>
+                        {t.plan && <>
+                          <span className="text-gray-600">·</span>
+                          <span className={`text-xs ${t.plan === 'ตามแผน' ? 'text-green-500' : 'text-red-500'}`}>{t.plan}</span>
+                        </>}
+                        {t.strategy && <>
+                          <span className="text-gray-600">·</span>
+                          <span className="text-xs text-gray-400">{t.strategy}</span>
+                        </>}
+                        <span className="text-gray-600">·</span>
+                        <span className="text-xs text-gray-600">{t.date}</span>
                       </div>
                     </div>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-1">
-                      {t.strategy && <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">{t.strategy}</span>}
-                      {t.plan && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${t.plan === 'ตามแผน' ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'}`}>
-                          {t.plan === 'ตามแผน' ? '✅' : '❌'} {t.plan}
-                        </span>
-                      )}
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${t.pnl > 0 ? 'bg-green-900/40 text-green-300' : 'bg-red-900/40 text-red-300'}`}>
-                        {t.pnl > 0 ? 'Win' : 'Loss'}
-                      </span>
-                    </div>
-
-                    {/* Notes */}
-                    {t.notes && <p className="text-xs text-gray-400">{t.notes}</p>}
-
-                    {/* Learning Point */}
-                    {t.learningPoint ? (
-                      <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-lg px-3 py-2">
-                        <p className="text-xs text-yellow-500 font-semibold mb-0.5">💡 Learning Point</p>
-                        <p className="text-sm text-yellow-100">{t.learningPoint}</p>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-gray-700 italic">ยังไม่มี learning point</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )
+            })()}
           </div>
         )}
       </main>
