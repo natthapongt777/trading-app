@@ -6,14 +6,14 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { Trade, Setup } from '@/types'
-import { PRODUCTS, ACCOUNTS, STAGES, CHECKLIST_ITEMS } from '@/lib/constants'
+import { PRODUCTS, ACCOUNTS, STAGES, STRATEGIES, CHECKLIST_ITEMS } from '@/lib/constants'
 
 type Tab = 'dashboard' | 'trades' | 'setups'
 
 const defaultForm = {
   date: '', symbol: 'XAUUSD', direction: 'Buy' as 'Buy' | 'Sell',
-  account: 'Eightcap', entry: '', exit: '', size: '', pnl: '',
-  feeling: '', strategy: '', notes: '', plan: 'ตามแผน' as 'ตามแผน' | 'ไม่ตามแผน',
+  account: 'Eightcap', entry: '', exit: '', size: '', pnl: '', rr: '',
+  strategy: '', notes: '', learningPoint: '', plan: 'ตามแผน' as 'ตามแผน' | 'ไม่ตามแผน',
 }
 
 export default function Home() {
@@ -80,7 +80,8 @@ export default function Home() {
           exit: parseFloat(tradeForm.exit) || 0,
           size: parseFloat(tradeForm.size) || 0,
           pnl: parseFloat(tradeForm.pnl) || 0,
-          feeling: tradeForm.feeling, strategy: tradeForm.strategy, notes: tradeForm.notes, plan: tradeForm.plan,
+          rr: parseFloat(tradeForm.rr) || 0,
+          strategy: tradeForm.strategy, notes: tradeForm.notes, learningPoint: tradeForm.learningPoint, plan: tradeForm.plan,
         }),
       })
       if (!res.ok) throw new Error()
@@ -175,6 +176,7 @@ export default function Home() {
 
   // ── Dashboard calculations ──────────────────────────────────────────────────
   const tradeStrategies = [...new Set(trades.map(t => t.strategy).filter(Boolean))]
+  const allStrategies = [...new Set([...STRATEGIES, ...tradeStrategies])]
   const tradeMonths = [...new Set(trades.map(t => t.date.slice(0, 7)))].sort().reverse()
 
   const filtered = trades.filter(t => {
@@ -195,10 +197,6 @@ export default function Home() {
   const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date))
   let cum = 0
   const cumulativeData = sorted.map(t => ({ label: t.date.slice(5).replace('-', '/'), cum: (cum += t.pnl) }))
-
-  const feelingMap: Record<string, number> = {}
-  filtered.forEach(t => { if (t.feeling) feelingMap[t.feeling] = (feelingMap[t.feeling] ?? 0) + t.pnl })
-  const feelingData = Object.entries(feelingMap).map(([feeling, pnl]) => ({ feeling, pnl: Math.round(pnl) }))
 
   const accMap: Record<string, number> = {}
   filtered.forEach(t => { accMap[t.account] = (accMap[t.account] ?? 0) + t.pnl })
@@ -371,25 +369,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* P&L by Feeling */}
-            {feelingData.length > 0 && (
-              <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
-                <h3 className="text-sm font-semibold">🧠 P&L by Feeling</h3>
-                <p className="text-xs text-gray-400 mb-3">Feeling ไหนทำกำไรได้ดีสุด — หา Edge ของตัวเอง</p>
-                <ResponsiveContainer width="100%" height={160}>
-                  <BarChart data={feelingData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="feeling" tick={{ fontSize: 11, fill: '#9ca3af' }} />
-                    <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-                      formatter={(v) => [(v as number).toLocaleString(), 'P&L รวม']} />
-                    <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
-                      {feelingData.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? '#3b82f6' : '#ef4444'} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
           </div>
         )}
 
@@ -449,10 +428,13 @@ export default function Home() {
                       <span>In {t.entry}</span>
                       <span>Out {t.exit}</span>
                       {t.size > 0 && <span>{t.size} lot</span>}
-                      {t.feeling && <span className="text-purple-400">😌 {t.feeling}</span>}
+                      {t.rr !== 0 && <span className={t.rr > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>{t.rr > 0 ? '+' : ''}{t.rr}R</span>}
                     </div>
                     {(t.strategy || t.notes) && (
                       <p className="text-xs text-gray-500 mt-1">{[t.strategy, t.notes].filter(Boolean).join(' · ')}</p>
+                    )}
+                    {t.learningPoint && (
+                      <p className="text-xs text-yellow-500/80 mt-1">💡 {t.learningPoint}</p>
                     )}
                     <div className="flex gap-2 mt-2">
                       <button onClick={() => setEditTrade({ ...t })}
@@ -602,19 +584,41 @@ export default function Home() {
                   }`} />
               </div>
 
-              {[
-                { key: 'feeling',  label: 'Feeling ตอนเข้า', placeholder: 'เช่น มั่นใจ / FOMO / ลังเล' },
-                { key: 'strategy', label: 'Strategy',         placeholder: 'เช่น H4 Trend, TF15 Break' },
-                { key: 'notes',    label: 'Notes',            placeholder: 'บันทึกเพิ่มเติม' },
-              ].map(({ key, label, placeholder }) => (
-                <div key={key}>
-                  <label className="text-xs text-gray-400 mb-1 block">{label}</label>
-                  <input type="text" placeholder={placeholder}
-                    value={tradeForm[key as keyof typeof tradeForm] as string}
-                    onChange={e => setTradeForm(f => ({ ...f, [key]: e.target.value }))}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
-                </div>
-              ))}
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">RR (กี่ R — ใส่ + ถ้า win, - ถ้า loss)</label>
+                <input type="number" step="0.1" placeholder="เช่น 2.5 หรือ -1"
+                  value={tradeForm.rr}
+                  onChange={e => setTradeForm(f => ({ ...f, rr: e.target.value }))}
+                  className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-sm focus:outline-none ${
+                    parseFloat(tradeForm.rr) > 0 ? 'text-green-400 border-green-700 focus:border-green-500' :
+                    parseFloat(tradeForm.rr) < 0 ? 'text-red-400 border-red-700 focus:border-red-500' :
+                    'text-white border-gray-700 focus:border-blue-500'
+                  }`} />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Strategy</label>
+                <input type="text" list="strategy-suggestions" placeholder="เลือกหรือพิมพ์กลยุทธ์..."
+                  value={tradeForm.strategy}
+                  onChange={e => setTradeForm(f => ({ ...f, strategy: e.target.value }))}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Notes</label>
+                <input type="text" placeholder="บันทึกเพิ่มเติม"
+                  value={tradeForm.notes}
+                  onChange={e => setTradeForm(f => ({ ...f, notes: e.target.value }))}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Learning Point</label>
+                <textarea rows={2} placeholder="บทเรียนจาก trade นี้..."
+                  value={tradeForm.learningPoint}
+                  onChange={e => setTradeForm(f => ({ ...f, learningPoint: e.target.value }))}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 resize-none" />
+              </div>
 
               <div>
                 <label className="text-xs text-gray-400 mb-2 block">ทำตามแผนไหม?</label>
@@ -890,14 +894,41 @@ export default function Home() {
                     editTrade.pnl > 0 ? 'text-green-400 border-green-700' : editTrade.pnl < 0 ? 'text-red-400 border-red-700' : 'text-white border-gray-700'
                   }`} />
               </div>
-              {(['feeling', 'strategy', 'notes'] as const).map(k => (
-                <div key={k}>
-                  <label className="text-xs text-gray-400 mb-1 block capitalize">{k === 'feeling' ? 'Feeling' : k === 'strategy' ? 'Strategy' : 'Notes'}</label>
-                  <input type="text" value={editTrade[k]}
-                    onChange={e => setEditTrade(t => t ? { ...t, [k]: e.target.value } : null)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
-                </div>
-              ))}
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">RR (กี่ R — ใส่ + ถ้า win, - ถ้า loss)</label>
+                <input type="number" step="0.1"
+                  value={editTrade.rr}
+                  onChange={e => setEditTrade(t => t ? { ...t, rr: parseFloat(e.target.value) || 0 } : null)}
+                  className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-sm focus:outline-none ${
+                    editTrade.rr > 0 ? 'text-green-400 border-green-700' :
+                    editTrade.rr < 0 ? 'text-red-400 border-red-700' :
+                    'text-white border-gray-700'
+                  }`} />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Strategy</label>
+                <input type="text" list="strategy-suggestions"
+                  value={editTrade.strategy}
+                  onChange={e => setEditTrade(t => t ? { ...t, strategy: e.target.value } : null)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Notes</label>
+                <input type="text"
+                  value={editTrade.notes}
+                  onChange={e => setEditTrade(t => t ? { ...t, notes: e.target.value } : null)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Learning Point</label>
+                <textarea rows={2}
+                  value={editTrade.learningPoint}
+                  onChange={e => setEditTrade(t => t ? { ...t, learningPoint: e.target.value } : null)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 resize-none" />
+              </div>
               <div>
                 <label className="text-xs text-gray-400 mb-2 block">ทำตามแผนไหม?</label>
                 <div className="flex gap-2">
@@ -923,6 +954,9 @@ export default function Home() {
           </div>
         </div>
       )}
+      <datalist id="strategy-suggestions">
+        {allStrategies.map(s => <option key={s} value={s} />)}
+      </datalist>
     </div>
   )
 }

@@ -8,9 +8,10 @@ export interface Trade {
   exit: number
   size: number
   pnl: number
-  feeling: string
+  rr: number
   strategy: string
   notes: string
+  learningPoint: string
   plan: 'ตามแผน' | 'ไม่ตามแผน' | ''
 }
 
