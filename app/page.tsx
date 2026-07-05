@@ -51,6 +51,20 @@ export default function Home() {
   const [tradeFilterAccount, setTradeFilterAccount] = useState('all')
   const [tradeSortOrder, setTradeSortOrder] = useState<'desc' | 'asc'>('desc')
 
+  const [starredRows, setStarredRows] = useState<Set<number>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('starred_trades') ?? '[]')) }
+    catch { return new Set() }
+  })
+
+  const toggleStar = (rowIndex: number) => {
+    setStarredRows(prev => {
+      const next = new Set(prev)
+      if (next.has(rowIndex)) next.delete(rowIndex); else next.add(rowIndex)
+      localStorage.setItem('starred_trades', JSON.stringify([...next]))
+      return next
+    })
+  }
+
   const [reviewWinLoss, setReviewWinLoss] = useState<'all' | 'win' | 'loss'>('all')
   const [reviewPlan, setReviewPlan] = useState<'all' | 'ตามแผน' | 'ไม่ตามแผน'>('all')
   const [reviewAccount, setReviewAccount] = useState('all')
@@ -636,26 +650,41 @@ export default function Home() {
               ) : (
                 <div className="space-y-2">
                   <p className="text-xs text-gray-500">💡 {withLP.length} learning point</p>
-                  {withLP.map((t, i) => (
-                    <div key={i} className="bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 space-y-1.5">
-                      <p className="text-sm text-yellow-100">{t.learningPoint}</p>
-                      <div className="flex flex-wrap gap-1">
-                        <span className="text-xs text-gray-500 font-mono">{t.symbol}</span>
-                        <span className="text-gray-600">·</span>
-                        <span className={`text-xs font-medium ${t.pnl > 0 ? 'text-green-400' : 'text-red-400'}`}>{t.pnl > 0 ? 'Win' : 'Loss'}</span>
-                        {t.plan && <>
-                          <span className="text-gray-600">·</span>
-                          <span className={`text-xs ${t.plan === 'ตามแผน' ? 'text-green-500' : 'text-red-500'}`}>{t.plan}</span>
-                        </>}
-                        {t.strategy && <>
-                          <span className="text-gray-600">·</span>
-                          <span className="text-xs text-gray-400">{t.strategy}</span>
-                        </>}
-                        <span className="text-gray-600">·</span>
-                        <span className="text-xs text-gray-600">{t.date}</span>
-                      </div>
-                    </div>
-                  ))}
+                  {[...withLP]
+                    .sort((a, b) => {
+                      const aS = starredRows.has(a.rowIndex) ? 0 : 1
+                      const bS = starredRows.has(b.rowIndex) ? 0 : 1
+                      return aS - bS
+                    })
+                    .map((t, i) => {
+                      const starred = starredRows.has(t.rowIndex)
+                      return (
+                        <div key={i} className={`border rounded-xl px-4 py-3 space-y-1.5 ${starred ? 'bg-yellow-900/20 border-yellow-700/50' : 'bg-gray-800/60 border-gray-700'}`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm text-yellow-100 flex-1">{t.learningPoint}</p>
+                            <button onClick={() => toggleStar(t.rowIndex)}
+                              className="text-lg leading-none shrink-0 transition-transform active:scale-125">
+                              {starred ? '⭐' : '☆'}
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="text-xs text-gray-500 font-mono">{t.symbol}</span>
+                            <span className="text-gray-600">·</span>
+                            <span className={`text-xs font-medium ${t.pnl > 0 ? 'text-green-400' : 'text-red-400'}`}>{t.pnl > 0 ? 'Win' : 'Loss'}</span>
+                            {t.plan && <>
+                              <span className="text-gray-600">·</span>
+                              <span className={`text-xs ${t.plan === 'ตามแผน' ? 'text-green-500' : 'text-red-500'}`}>{t.plan}</span>
+                            </>}
+                            {t.strategy && <>
+                              <span className="text-gray-600">·</span>
+                              <span className="text-xs text-gray-400">{t.strategy}</span>
+                            </>}
+                            <span className="text-gray-600">·</span>
+                            <span className="text-xs text-gray-600">{t.date}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
                 </div>
               )
             })()}
