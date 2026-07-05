@@ -575,29 +575,32 @@ export default function Home() {
         {/* ── REVIEW ──────────────────────────────────────────────────────── */}
         {tab === 'review' && (
           <div className="space-y-3">
-            {/* Win/Loss toggle */}
-            <div className="flex gap-2 flex-wrap">
-              {(['all', 'win', 'loss'] as const).map(v => (
-                <button key={v} onClick={() => setReviewWinLoss(v)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                    reviewWinLoss === v
-                      ? v === 'win' ? 'bg-green-600 text-white' : v === 'loss' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
-                      : 'bg-gray-800 text-gray-400 border border-gray-700'
-                  }`}>
-                  {v === 'all' ? 'Win + Loss' : v === 'win' ? '✅ Win' : '❌ Loss'}
-                </button>
-              ))}
-              <div className="w-px bg-gray-700" />
-              {(['all', 'ตามแผน', 'ไม่ตามแผน'] as const).map(v => (
-                <button key={v} onClick={() => setReviewPlan(v)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                    reviewPlan === v
-                      ? v === 'ตามแผน' ? 'bg-green-700 text-white' : v === 'ไม่ตามแผน' ? 'bg-red-700 text-white' : 'bg-gray-600 text-white'
-                      : 'bg-gray-800 text-gray-400 border border-gray-700'
-                  }`}>
-                  {v === 'all' ? 'ทุก Plan' : v === 'ตามแผน' ? '📋 ตามแผน' : '📋 ไม่ตามแผน'}
-                </button>
-              ))}
+            {/* Win/Loss + Plan toggles */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
+                {(['all', 'win', 'loss'] as const).map(v => (
+                  <button key={v} onClick={() => setReviewWinLoss(v)}
+                    className={`py-2 rounded-lg text-xs font-medium transition ${
+                      reviewWinLoss === v
+                        ? v === 'win' ? 'bg-green-600 text-white' : v === 'loss' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
+                        : 'bg-gray-800 text-gray-400 border border-gray-700'
+                    }`}>
+                    {v === 'all' ? 'ทั้งหมด' : v === 'win' ? '✅ Win' : '❌ Loss'}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {(['all', 'ตามแผน', 'ไม่ตามแผน'] as const).map(v => (
+                  <button key={v} onClick={() => setReviewPlan(v)}
+                    className={`py-2 rounded-lg text-xs font-medium transition ${
+                      reviewPlan === v
+                        ? v === 'ตามแผน' ? 'bg-green-700 text-white' : v === 'ไม่ตามแผน' ? 'bg-red-700 text-white' : 'bg-gray-600 text-white'
+                        : 'bg-gray-800 text-gray-400 border border-gray-700'
+                    }`}>
+                    {v === 'all' ? 'ทุก Plan' : v === 'ตามแผน' ? '✅ ตามแผน' : '❌ ไม่ตามแผน'}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Dropdowns */}
