@@ -203,6 +203,20 @@ export default function Home() {
   filtered.forEach(t => { accMap[t.account] = (accMap[t.account] ?? 0) + t.pnl })
   const accData = Object.entries(accMap).map(([account, pnl]) => ({ account, pnl: Math.round(pnl) }))
 
+  const strategyWinLoss = [...new Set(filtered.map(t => t.strategy).filter(Boolean))].map(strategy => {
+    const group = filtered.filter(t => t.strategy === strategy)
+    const winCount = group.filter(t => t.pnl > 0).length
+    const lossCount = group.filter(t => t.pnl <= 0).length
+    return {
+      strategy,
+      win: Math.round(winCount / group.length * 100),
+      loss: Math.round(lossCount / group.length * 100),
+      winCount,
+      lossCount,
+      count: group.length,
+    }
+  })
+
   const planGroups = ['ตามแผน', 'ไม่ตามแผน'].map(p => {
     const group = filtered.filter(t => t.plan === p)
     const w = group.filter(t => t.pnl > 0).length
@@ -352,6 +366,30 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {/* Win/Loss % by Strategy */}
+            {strategyWinLoss.length > 0 && (
+              <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
+                <h3 className="text-sm font-semibold mb-1">🎯 Win/Loss % by Strategy</h3>
+                <p className="text-xs text-gray-400 mb-3">แต่ละแท่งรวม 100% — <span className="text-green-400">■ Win</span>  <span className="text-red-400">■ Loss</span></p>
+                <ResponsiveContainer width="100%" height={strategyWinLoss.length * 44 + 40}>
+                  <BarChart data={strategyWinLoss} layout="vertical" margin={{ left: 8, right: 40 }}>
+                    <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                    <YAxis type="category" dataKey="strategy" tick={{ fontSize: 11, fill: '#d1d5db' }} width={110} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                      formatter={(value, name, props) => {
+                        const { winCount, lossCount, count } = props.payload
+                        if (name === 'win') return [`${value}%  (${winCount}/${count} trades)`, 'Win']
+                        return [`${value}%  (${lossCount}/${count} trades)`, 'Loss']
+                      }}
+                    />
+                    <Bar dataKey="win" stackId="a" fill="#22c55e" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="loss" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
 
             {/* Plan vs Not Plan */}
             {filtered.some(t => t.plan) && (
