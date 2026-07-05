@@ -46,6 +46,7 @@ export default function Home() {
   const [filterAccount, setFilterAccount] = useState('all')
   const [filterStrategy, setFilterStrategy] = useState('all')
   const [filterMonth, setFilterMonth] = useState('all')
+  const [filterPlan, setFilterPlan] = useState('all')
 
   const [tradeFilterAccount, setTradeFilterAccount] = useState('all')
   const [tradeSortOrder, setTradeSortOrder] = useState<'desc' | 'asc'>('desc')
@@ -194,6 +195,7 @@ export default function Home() {
     if (filterAccount !== 'all' && t.account !== filterAccount) return false
     if (filterStrategy !== 'all' && t.strategy !== filterStrategy) return false
     if (filterMonth !== 'all' && t.date.slice(0, 7) !== filterMonth) return false
+    if (filterPlan !== 'all' && t.plan !== filterPlan) return false
     return true
   })
 
@@ -313,6 +315,12 @@ export default function Home() {
                 className="bg-gray-800 text-white text-xs px-3 py-2 rounded-lg border border-gray-700 focus:outline-none">
                 <option value="all">All Months</option>
                 {tradeMonths.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <select value={filterPlan} onChange={e => setFilterPlan(e.target.value)}
+                className="bg-gray-800 text-white text-xs px-3 py-2 rounded-lg border border-gray-700 focus:outline-none">
+                <option value="all">All Plans</option>
+                <option value="ตามแผน">✅ ตามแผน</option>
+                <option value="ไม่ตามแผน">❌ ไม่ตามแผน</option>
               </select>
             </div>
 
