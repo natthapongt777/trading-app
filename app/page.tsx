@@ -8,7 +8,7 @@ import {
 import { Trade, Setup } from '@/types'
 import { PRODUCTS, ACCOUNTS, STAGES, STRATEGIES, CHECKLIST_ITEMS, LOT_CALC } from '@/lib/constants'
 
-type Tab = 'dashboard' | 'trades' | 'setups'
+type Tab = 'dashboard' | 'trades' | 'setups' | 'review'
 
 const defaultForm = {
   date: '', symbol: 'XAUUSD', direction: 'Buy' as 'Buy' | 'Sell',
@@ -49,6 +49,13 @@ export default function Home() {
 
   const [tradeFilterAccount, setTradeFilterAccount] = useState('all')
   const [tradeSortOrder, setTradeSortOrder] = useState<'desc' | 'asc'>('desc')
+
+  const [reviewWinLoss, setReviewWinLoss] = useState<'all' | 'win' | 'loss'>('all')
+  const [reviewPlan, setReviewPlan] = useState<'all' | 'ตามแผน' | 'ไม่ตามแผน'>('all')
+  const [reviewAccount, setReviewAccount] = useState('all')
+  const [reviewStrategy, setReviewStrategy] = useState('all')
+  const [reviewSymbol, setReviewSymbol] = useState('all')
+  const [reviewMonth, setReviewMonth] = useState('all')
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -190,6 +197,19 @@ export default function Home() {
     return true
   })
 
+  const reviewFiltered = [...trades]
+    .filter(t => {
+      if (reviewWinLoss === 'win' && t.pnl <= 0) return false
+      if (reviewWinLoss === 'loss' && t.pnl > 0) return false
+      if (reviewPlan !== 'all' && t.plan !== reviewPlan) return false
+      if (reviewAccount !== 'all' && t.account !== reviewAccount) return false
+      if (reviewStrategy !== 'all' && t.strategy !== reviewStrategy) return false
+      if (reviewSymbol !== 'all' && t.symbol !== reviewSymbol) return false
+      if (reviewMonth !== 'all' && t.date.slice(0, 7) !== reviewMonth) return false
+      return true
+    })
+    .sort((a, b) => b.date.localeCompare(a.date))
+
   const totalPnl = filtered.reduce((s, t) => s + t.pnl, 0)
   const wins = filtered.filter(t => t.pnl > 0)
   const losses = filtered.filter(t => t.pnl < 0)
@@ -256,12 +276,12 @@ export default function Home() {
       {/* Tabs */}
       <div className="bg-gray-900 border-b border-gray-800 sticky top-[52px] z-30">
         <div className="max-w-5xl mx-auto flex">
-          {(['dashboard', 'trades', 'setups'] as Tab[]).map(t => (
+          {(['dashboard', 'trades', 'setups', 'review'] as Tab[]).map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className={`flex-1 py-3 text-sm font-medium transition ${
+              className={`flex-1 py-3 text-xs font-medium transition ${
                 tab === t ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-500 hover:text-gray-300'
               }`}>
-              {t === 'dashboard' ? '📊 Dashboard' : t === 'trades' ? '📝 Trades' : '🎯 Setups'}
+              {t === 'dashboard' ? '📊 Dashboard' : t === 'trades' ? '📝 Trades' : t === 'setups' ? '🎯 Setups' : '📖 Review'}
             </button>
           ))}
         </div>
@@ -547,6 +567,112 @@ export default function Home() {
                     </div>
                   )
                 })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── REVIEW ──────────────────────────────────────────────────────── */}
+        {tab === 'review' && (
+          <div className="space-y-3">
+            {/* Win/Loss toggle */}
+            <div className="flex gap-2 flex-wrap">
+              {(['all', 'win', 'loss'] as const).map(v => (
+                <button key={v} onClick={() => setReviewWinLoss(v)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    reviewWinLoss === v
+                      ? v === 'win' ? 'bg-green-600 text-white' : v === 'loss' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
+                      : 'bg-gray-800 text-gray-400 border border-gray-700'
+                  }`}>
+                  {v === 'all' ? 'Win + Loss' : v === 'win' ? '✅ Win' : '❌ Loss'}
+                </button>
+              ))}
+              <div className="w-px bg-gray-700" />
+              {(['all', 'ตามแผน', 'ไม่ตามแผน'] as const).map(v => (
+                <button key={v} onClick={() => setReviewPlan(v)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    reviewPlan === v
+                      ? v === 'ตามแผน' ? 'bg-green-700 text-white' : v === 'ไม่ตามแผน' ? 'bg-red-700 text-white' : 'bg-gray-600 text-white'
+                      : 'bg-gray-800 text-gray-400 border border-gray-700'
+                  }`}>
+                  {v === 'all' ? 'ทุก Plan' : v === 'ตามแผน' ? '📋 ตามแผน' : '📋 ไม่ตามแผน'}
+                </button>
+              ))}
+            </div>
+
+            {/* Dropdowns */}
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { value: reviewSymbol,   setter: setReviewSymbol,   options: tradeSymbols,    all: 'All Symbols' },
+                { value: reviewAccount,  setter: setReviewAccount,  options: ACCOUNTS,        all: 'All Accounts' },
+                { value: reviewStrategy, setter: setReviewStrategy, options: tradeStrategies, all: 'All Strategies' },
+                { value: reviewMonth,    setter: setReviewMonth,    options: tradeMonths,     all: 'All Months' },
+              ].map(({ value, setter, options, all }) => (
+                <select key={all} value={value} onChange={e => setter(e.target.value)}
+                  className="bg-gray-800 text-white text-xs px-3 py-2 rounded-lg border border-gray-700 focus:outline-none">
+                  <option value="all">{all}</option>
+                  {options.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              ))}
+            </div>
+
+            <p className="text-xs text-gray-500">{reviewFiltered.length} trade{reviewFiltered.length !== 1 ? 's' : ''}</p>
+
+            {loading ? (
+              <div className="text-center py-20 text-gray-500">กำลังโหลด...</div>
+            ) : reviewFiltered.length === 0 ? (
+              <div className="text-center py-20 text-gray-500">ไม่มี trade ที่ตรงกับ filter</div>
+            ) : (
+              <div className="space-y-3">
+                {reviewFiltered.map((t, i) => (
+                  <div key={i} className={`rounded-xl p-4 border space-y-2 ${t.pnl >= 0 ? 'bg-green-900/10 border-green-800/30' : 'bg-red-900/10 border-red-800/30'}`}>
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono font-bold text-sm">{t.symbol}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${t.direction === 'Buy' ? 'bg-green-700 text-green-100' : 'bg-red-700 text-red-100'}`}>{t.direction}</span>
+                        <span className="text-xs text-gray-400">{t.date}</span>
+                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">{t.account}</span>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className={`font-bold text-sm ${t.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {t.pnl >= 0 ? '+' : ''}{t.pnl.toLocaleString()}
+                        </span>
+                        {t.rr !== 0 && (
+                          <span className={`ml-2 text-xs font-medium ${t.rr > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {t.rr > 0 ? '+' : ''}{t.rr}R
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1">
+                      {t.strategy && <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">{t.strategy}</span>}
+                      {t.plan && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${t.plan === 'ตามแผน' ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'}`}>
+                          {t.plan === 'ตามแผน' ? '✅' : '❌'} {t.plan}
+                        </span>
+                      )}
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${t.pnl > 0 ? 'bg-green-900/40 text-green-300' : 'bg-red-900/40 text-red-300'}`}>
+                        {t.pnl > 0 ? 'Win' : 'Loss'}
+                      </span>
+                    </div>
+
+                    {/* Notes */}
+                    {t.notes && <p className="text-xs text-gray-400">{t.notes}</p>}
+
+                    {/* Learning Point */}
+                    {t.learningPoint ? (
+                      <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-lg px-3 py-2">
+                        <p className="text-xs text-yellow-500 font-semibold mb-0.5">💡 Learning Point</p>
+                        <p className="text-sm text-yellow-100">{t.learningPoint}</p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-700 italic">ยังไม่มี learning point</p>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
